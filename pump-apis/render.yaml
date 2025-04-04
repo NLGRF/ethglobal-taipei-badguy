@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: pump-apis
+    env: docker
+    plan: starter
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
+    healthCheckPath: /api
+    autoDeploy: true
+    numInstances: 1
+    buildFilter:
+      paths:
+        - src/**/*.ts
+        - package.json
+        - yarn.lock
+        - Dockerfile 

@@ -96,3 +96,96 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 ## License
 
 Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+
+# Pump APIs
+
+Blockchain gas fee estimation and transaction cost calculation API.
+
+## Features
+
+- Gas fee estimation for multiple blockchains
+- Transaction gas cost calculation
+- Swagger API documentation
+
+## Supported Chains
+
+- Ethereum
+- Polygon
+- Base
+- Celo
+- Linea
+- Rootstock
+- Saga
+
+## Local Development
+
+1. **Install dependencies:**
+
+```
+yarn install
+```
+
+2. **Create .env file:**
+
+Copy the example environment file:
+
+```
+cp .env.example .env
+```
+
+3. **Start development server:**
+
+```
+yarn start:dev
+```
+
+The API will be available at http://localhost:3000 and Swagger documentation at http://localhost:3000/api.
+
+## Building for Production
+
+```
+yarn build
+```
+
+## Docker
+
+Build the Docker image:
+
+```
+docker build -t pump-apis .
+```
+
+Run the container:
+
+```
+docker run -p 3000:3000 pump-apis
+```
+
+## Deployment on Render
+
+This repository includes configuration for easy deployment on Render.
+
+### Deploy with Render Blueprint
+
+1. Fork this repository
+2. Create a new Web Service on Render
+3. Select "Deploy from GitHub"
+4. Connect your GitHub account and select your forked repository
+5. Render will automatically detect the `render.yaml` configuration
+6. Click "Create Web Service"
+
+Render will automatically build and deploy the application using the Docker configuration.
+
+### Manual Deployment
+
+1. Sign up for [Render](https://render.com/)
+2. Create a new Web Service
+3. Connect your GitHub repository
+4. Select "Docker" as the environment
+5. Set the following:
+   - Build Command: (leave empty, handled by Dockerfile)
+   - Start Command: (leave empty, handled by Dockerfile)
+6. Add environment variables if needed
+7. Click "Create Web Service"
+
+The health check path is configured to `/api`, which will use the Swagger UI to verify the service is running correctly.
