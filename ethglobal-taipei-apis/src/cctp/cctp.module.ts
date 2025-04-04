@@ -1,9 +1,12 @@
 import { Module } from '@nestjs/common';
-import { CctpController } from './cctp.controller';
-import { CctpService } from './cctp.service';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { CctpHistoryController } from './cctp-history.controller';
+import { CctpHistoryService } from './cctp-history.service';
+import { CctpHistory } from './entities/cctp-history.entity';
 
 @Module({
-  controllers: [CctpController],
-  providers: [CctpService],
+  imports: [TypeOrmModule.forFeature([CctpHistory])],
+  controllers: [CctpHistoryController],
+  providers: [CctpHistoryService],
 })
 export class CctpModule {}

@@ -1,34 +1,22 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Post, Get, Body } from '@nestjs/common';
+import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { CctpService } from './cctp.service';
-import { CreateCctpDto } from './dto/create-cctp.dto';
-import { UpdateCctpDto } from './dto/update-cctp.dto';
+import { DepositDto } from './dto/deposit.dto';
 
+@ApiTags('cctp')
 @Controller('cctp')
 export class CctpController {
   constructor(private readonly cctpService: CctpService) {}
 
-  @Post()
-  create(@Body() createCctpDto: CreateCctpDto) {
-    return this.cctpService.create(createCctpDto);
+  @Post('deposit')
+  @ApiOperation({ summary: 'Call depositForBurnWithCaller' })
+  async deposit(@Body() dto: DepositDto) {
+    return this.cctpService.depositForBurn(dto);
   }
 
-  @Get()
-  findAll() {
-    return this.cctpService.findAll();
-  }
-
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.cctpService.findOne(+id);
-  }
-
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateCctpDto: UpdateCctpDto) {
-    return this.cctpService.update(+id, updateCctpDto);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.cctpService.remove(+id);
+  @Get('history')
+  @ApiOperation({ summary: 'Get all transaction history' })
+  async history() {
+    return this.cctpService.findAllHistory();
   }
 }
