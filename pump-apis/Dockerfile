@@ -3,20 +3,20 @@ FROM node:18-alpine AS build
 # Create app directory
 WORKDIR /usr/src/app
 
-# Copy package.json and yarn.lock
-COPY package*.json yarn.lock ./
+# Copy package.json and package-lock.json
+COPY package*.json ./
 
 # Install dependencies
-RUN yarn install --frozen-lockfile
+RUN npm ci
 
 # Copy source code
 COPY . .
 
 # Build the application
-RUN yarn build
+RUN npm run build
 
 # Remove development dependencies
-RUN yarn install --production --frozen-lockfile
+RUN npm ci --only=production
 
 # Production stage
 FROM node:18-alpine
