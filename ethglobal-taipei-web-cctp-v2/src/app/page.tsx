@@ -38,6 +38,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import Image from 'next/image';
+import axios from 'axios';
 
 interface GasPrice {
   chain: string;
@@ -234,56 +235,23 @@ export default function Home() {
   const handleConfirmAmount = async () => {
     if (!usdcAmount || !isWalletConnected) return;
     
-    // Mock gas prices data
-    const mockGasPrices = [
-      {
-        chain: "Ethereum Sepolia",
-        symbol: "ETH",
-        price: 1792.11,
-        gasAmount: 0.000056,
-        usdcPrice: 1.00,
-        minimumRequired: 0.03,
-        cannotSend: true
-      },
-      {
-        chain: "Base Sepolia",
-        symbol: "BASE",
-        price: 0.00,
-        gasAmount: 24646.631121,
-        usdcPrice: 1.00,
+    try {
+      const response = await axios.get(`https://ethglobal-taipei-badguy.onrender.com/price?amount=${usdcAmount}`);
+      const apiGasPrices = response.data.map((item: any) => ({
+        chain: getChainName(item.chain),
+        symbol: item.gasName,
+        price: item.price,
+        gasAmount: item.gasAmount,
+        usdcPrice: item.usdcPrice,
         minimumRequired: 0.00,
-        cannotSend: false
-      },
-      {
-        chain: "Polygon Amoy",
-        symbol: "MATIC",
-        price: 0.00,
-        gasAmount: 0.000000,
-        usdcPrice: 1.00,
-        minimumRequired: 0.00,
-        cannotSend: false
-      },
-      {
-        chain: "Celo",
-        symbol: "CELO",
-        price: 0.31,
-        gasAmount: 0.327630,
-        usdcPrice: 1.00,
-        minimumRequired: 0.00,
-        cannotSend: false
-      },
-      {
-        chain: "Rootstock Testnet",
-        symbol: "RBTC",
-        price: 0.00,
-        gasAmount: 67893.284597,
-        usdcPrice: 1.00,
-        minimumRequired: 0.00,
-        cannotSend: false
-      }
-    ];
+        cannotSend: chainName === getChainName(item.chain) // Disable if same chain
+      }));
 
-    setGasPrices(mockGasPrices);
+      setGasPrices(apiGasPrices);
+    } catch (err) {
+      console.error('Error fetching gas prices:', err);
+      setError('Failed to fetch gas prices');
+    }
   };
 
   const handleBuyGas = async () => {

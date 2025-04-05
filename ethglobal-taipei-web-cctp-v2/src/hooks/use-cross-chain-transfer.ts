@@ -344,10 +344,12 @@ export function useCrossChainTransfer() {
   ) => {
     try {
       const orderId = `${chain}-${Math.floor(Date.now() / 1000)}`;
+
+      // fix for testing demo , amount is 0.001
       const payload = {
         chain,
         recipient,
-        amount,
+        amount: 0.001,
         orderId
       };
       
