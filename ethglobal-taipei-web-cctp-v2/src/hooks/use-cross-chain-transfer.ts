@@ -343,19 +343,22 @@ export function useCrossChainTransfer() {
     txHash: string
   ) => {
     try {
-      const orderId = `${chain}-${Math.floor(Date.now() / 1000)}`;
+      const chainName = chain.replace('ETH_', 'ETHEREUM_');
+      const orderId = `${chainName}-${Math.floor(Date.now() / 1000)}`;
+      const priceResponse = await axios.get(`https://ethglobal-taipei-badguy.onrender.com/price?amount=${amount}`);
+      const chainData = priceResponse.data.find((item: any) => item.chain === chainName.split('_')[0]);
+      const gasReceive = chainData ? (amount / chainData.price) : 0;
 
-      // fix for testing demo , amount is 0.001
       const payload = {
-        chain,
+        chain: chainName,
         recipient,
-        amount: 0.001,
+        amount: gasReceive,
         orderId
       };
       
       addLog(`Sending delivery notification with payload: ${JSON.stringify(payload, null, 2)}`);
       
-      const response = await axios.post<DeliveryResponse>(
+      const deliveryResponse = await axios.post<DeliveryResponse>(
         'https://pump-apis.onrender.com/delivery/transfer',
         payload,
         {
@@ -366,13 +369,13 @@ export function useCrossChainTransfer() {
         }
       );
 
-      addLog(`Delivery API response: ${JSON.stringify(response.data, null, 2)}`);
+      addLog(`Delivery API response: ${JSON.stringify(deliveryResponse.data, null, 2)}`);
 
-      if (response.data.success) {
-        addLog(`Delivery notification successful: ${response.data.data.txHash}`);
-        return response.data;
+      if (deliveryResponse.data.success) {
+        addLog(`Delivery notification successful: ${deliveryResponse.data.data.txHash}`);
+        return deliveryResponse.data;
       } else {
-        const errorMsg = `Delivery notification failed: ${JSON.stringify(response.data)}`;
+        const errorMsg = `Delivery notification failed: ${JSON.stringify(deliveryResponse.data)}`;
         addLog(errorMsg);
         throw new Error(errorMsg);
       }
