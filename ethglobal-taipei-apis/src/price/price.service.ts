@@ -13,7 +13,7 @@ interface TokenConfig {
 export class PriceService {
   private readonly chainConfigs: Record<string, TokenConfig> = {
     'Ethereum': { symbol: 'ETH', gasName: 'ETH' },
-    'Base': { symbol: 'BASE', gasName: 'ETH' },
+    'Base': { symbol: 'BASE', gasName: 'BASE' },
     'Polygon': { symbol: 'MATIC', gasName: 'MATIC' },
     'Celo': { symbol: 'CELO', gasName: 'CELO' },
     'Rootstock': { symbol: 'RBTC', gasName: 'RBTC' }
@@ -21,23 +21,19 @@ export class PriceService {
 
   constructor(private configService: ConfigService) {}
 
-  async getGasPrice(chain: string, usdcAmount: number = 1): Promise<PriceResponseDto> {
+  async getAllGasPrices(usdcAmount: number = 1): Promise<PriceResponseDto[]> {
     const apiKey = this.configService.get<string>('CMC_API_KEY');
     const apiUrl = this.configService.get<string>('CMC_API_URL');
-    const chainConfig = this.chainConfigs[chain];
 
     if (!apiKey || !apiUrl) {
       throw new Error('Missing CoinMarketCap API configuration');
     }
 
-    if (!chainConfig) {
-      throw new Error(`Unsupported chain: ${chain}`);
-    }
-
     try {
+      const symbols = Object.values(this.chainConfigs).map(c => c.symbol).join(',');
       const response = await axios.get(apiUrl, {
         params: {
-          symbol: chainConfig.symbol,
+          symbol: symbols,
           convert: 'USD'
         },
         headers: {
@@ -45,40 +41,60 @@ export class PriceService {
         }
       });
 
-      const tokenData = response.data?.data?.[chainConfig.symbol];
-      if (!tokenData?.quote?.USD?.price) {
-        throw new Error('Failed to get price from response');
+      const prices: PriceResponseDto[] = [];
+      for (const [chain, config] of Object.entries(this.chainConfigs)) {
+        const tokenData = response.data?.data?.[config.symbol];
+        if (!tokenData?.quote?.USD?.price) {
+          console.error(`No price data for ${chain}`);
+          prices.push({
+            chain,
+            gasName: config.gasName,
+            price: 0,
+            gasUnit: 'GWEI',
+            gasAmount: 0,
+            usdcPrice: 1
+          });
+          continue;
+        }
+
+        const tokenPrice = tokenData.quote.USD.price;
+        const gasAmount = usdcAmount / tokenPrice;
+
+        prices.push({
+          chain,
+          gasName: config.gasName,
+          price: tokenPrice,
+          gasUnit: 'GWEI',
+          gasAmount,
+          usdcPrice: 1
+        });
       }
 
-      const tokenPrice = tokenData.quote.USD.price;
-      const gasAmount = usdcAmount / tokenPrice;
-
-      return {
-        chain,
-        gasName: chainConfig.gasName,
-        price: tokenPrice,
-        gasUnit: 'GWEI',
-        gasAmount,
-        usdcPrice: 1 // USDC is pegged to USD
-      };
+      return prices;
     } catch (error) {
-      console.error(`Failed to fetch ${chain} price:`, error);
-      throw error;
+      console.error('Failed to fetch prices:', error);
+      return Object.entries(this.chainConfigs).map(([chain, config]) => ({
+        chain,
+        gasName: config.gasName,
+        price: 0,
+        gasUnit: 'GWEI',
+        gasAmount: 0,
+        usdcPrice: 1
+      }));
     }
   }
 
-  async getAllGasPrices(usdcAmount: number = 1): Promise<PriceResponseDto[]> {
-    const chains = ['Ethereum', 'Base', 'Polygon', 'Celo', 'Rootstock'];
-    const prices = await Promise.all(
-      chains.map(chain => this.getGasPrice(chain, usdcAmount))
-    );
-    return prices;
+  async getGasPrice(chain: string, usdcAmount: number = 1): Promise<PriceResponseDto> {
+    const prices = await this.getAllGasPrices(usdcAmount);
+    const price = prices.find(p => p.chain === chain);
+    if (!price) {
+      throw new Error(`Unsupported chain: ${chain}`);
+    }
+    return price;
   }
 
   async convertUsdcToEth(chain: string, usdcAmount: number): Promise<ConvertResponseDto> {
     const priceData = await this.getGasPrice(chain);
-    // Calculate ETH amount: USDC amount / (ETH price in USDC)
-    // Example: 10 USDC / 1792.67 USDC/ETH = 0.005577 ETH
     const ethAmount = usdcAmount / priceData.price;
     
     return {
@@ -89,10 +105,11 @@ export class PriceService {
   }
 
   async convertUsdcToEthAllChains(usdcAmount: number): Promise<ConvertResponseDto[]> {
-    const chains = ['Ethereum', 'Base', 'Polygon', 'Celo', 'Rootstock'];
-    const conversions = await Promise.all(
-      chains.map(chain => this.convertUsdcToEth(chain, usdcAmount))
-    );
-    return conversions;
+    const prices = await this.getAllGasPrices(usdcAmount);
+    return prices.map(price => ({
+      chain: price.chain,
+      usdcAmount,
+      ethAmount: price.price > 0 ? usdcAmount / price.price : 0
+    }));
   }
 } 
