@@ -469,13 +469,11 @@ export default function Home() {
                         <div
                           key={index}
                           className={`p-4 rounded-lg border cursor-pointer ${
-                            option.cannotSend 
-                              ? 'border-gray-200 bg-gray-50'
-                              : selectedGasOption?.chain === option.chain
+                            selectedGasOption?.chain === option.chain
                               ? 'border-green-500 bg-green-50'
                               : 'border-green-500/20 hover:border-green-500/40'
                           }`}
-                          onClick={() => !option.cannotSend && setSelectedGasOption(option)}
+                          onClick={() => setSelectedGasOption(option)}
                         >
                           <div className="flex justify-between items-center mb-2">
                             <h3 className="text-lg font-semibold text-gray-900">{option.chain}</h3>
@@ -484,25 +482,16 @@ export default function Home() {
                           <div className="space-y-2 text-sm">
                             <div className="flex justify-between">
                               <span className="text-gray-500">Price:</span>
-                              <span className="text-gray-900">{option.price.toFixed(2)} USDC</span>
+                              <span className="text-gray-900">{option.price?.toFixed(2) || '0.00'} USDC</span>
                             </div>
                             <div className="flex justify-between">
                               <span className="text-gray-500">Gas Amount:</span>
-                              <span className="text-gray-900">{option.gasAmount.toFixed(6)}</span>
+                              <span className="text-gray-900">{option.gasAmount?.toFixed(6) || '0.000000'} {option.gasName}</span>
                             </div>
                             <div className="flex justify-between">
                               <span className="text-gray-500">USDC Price:</span>
                               <span className="text-gray-900">{option.usdcPrice.toFixed(2)} USDC</span>
                             </div>
-                            <div className="flex justify-between border-t border-gray-200 pt-2 mt-2">
-                              <span className="text-gray-500">Minimum USDC Required:</span>
-                              <span className={option.minimumRequired > 0 ? 'text-gray-900' : 'text-green-500'}>
-                                {option.minimumRequired.toFixed(2)} USDC
-                              </span>
-                            </div>
-                            {option.cannotSend && (
-                              <p className="text-sm text-gray-500 mt-2">Cannot send gas to the same chain</p>
-                            )}
                           </div>
                         </div>
                       ))}
