@@ -20,7 +20,15 @@ interface CoinMarketCapResponse {
 export class PriceService {
   constructor(private configService: ConfigService) {}
 
-  async getGasPrice(chain: string): Promise<PriceResponseDto> {
+  async getAllGasPrices(usdcAmount: number = 1): Promise<PriceResponseDto[]> {
+    const chains = ['Ethereum', 'Base', 'Linea'];
+    const prices = await Promise.all(
+      chains.map(chain => this.getGasPrice(chain, usdcAmount))
+    );
+    return prices;
+  }
+
+  async getGasPrice(chain: string, usdcAmount: number = 1): Promise<PriceResponseDto> {
     const apiKey = this.configService.get<string>('CMC_API_KEY') || '';
     const apiUrl = this.configService.get<string>('CMC_API_URL') || '';
     const ethSymbol = this.configService.get<string>('CMC_ETH_SYMBOL') || 'ETH';
@@ -33,23 +41,31 @@ export class PriceService {
     try {
       const response = await axios.get<CoinMarketCapResponse>(apiUrl, {
         params: {
-          symbol: ethSymbol,
-          convert: usdcSymbol,
+          symbol: `${ethSymbol},${usdcSymbol}`,
+          convert: 'USD',
         },
         headers: {
           'X-CMC_PRO_API_KEY': apiKey,
         },
       });
 
-      const data = response.data?.data?.[ethSymbol]?.quote?.[usdcSymbol];
-      if (!data?.price) {
+      const ethData = response.data?.data?.[ethSymbol]?.quote?.USD;
+      const usdcData = response.data?.data?.[usdcSymbol]?.quote?.USD;
+
+      if (!ethData?.price || !usdcData?.price) {
         throw new Error('Failed to get price from response');
       }
+
+      // Calculate gas amount in GWEI: USDC amount / ETH price
+      const gasAmount = usdcAmount / ethData.price;
 
       return {
         chain,
         gasName: 'ETH',
-        price: data.price,
+        price: ethData.price,
+        gasUnit: 'GWEI',
+        gasAmount,
+        usdcPrice: usdcData.price,
       };
     } catch (error) {
       throw new Error(`Failed to fetch gas price: ${error.message}`);
@@ -58,6 +74,8 @@ export class PriceService {
 
   async convertUsdcToEth(chain: string, usdcAmount: number): Promise<ConvertResponseDto> {
     const priceData = await this.getGasPrice(chain);
+    // Calculate ETH amount: USDC amount / (ETH price in USDC)
+    // Example: 10 USDC / 1792.67 USDC/ETH = 0.005577 ETH
     const ethAmount = usdcAmount / priceData.price;
     
     return {
