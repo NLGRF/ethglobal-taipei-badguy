@@ -11,7 +11,7 @@ export class PriceService {
   private readonly chainConfigs: Record<string, ChainConfig> = {
     'Ethereum': { symbol: 'ETH', cmcId: '1027' },
     'Base': { symbol: 'ETH', cmcId: '1027' },
-    'Polygon': { symbol: 'POL', cmcId: '137' },
+    'Polygon': { symbol: 'MATIC', cmcId: '3890' },
     'Celo': { symbol: 'CELO', cmcId: '5567' },
     'Rootstock': { symbol: 'RBTC', cmcId: '3626' }
   };
@@ -36,7 +36,8 @@ export class PriceService {
       });
       
       const data = await res.json();
-      return data.data[config.cmcId].quote.USDC.price;
+      const price = data.data[config.cmcId].quote.USDC.price;
+      return price !== null ? price : 0;
     } catch (error) {
       console.error(`Failed to fetch ${chain} price:`, error);
       return 0;
