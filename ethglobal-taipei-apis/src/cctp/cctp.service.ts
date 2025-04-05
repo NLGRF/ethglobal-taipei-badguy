@@ -1,10 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
 import { ethers } from 'ethers';
-import { CctpHistory } from './entities/cctp-history.entity';
-import { DepositDto } from './dto/deposit.dto';
-import { getChainConfig } from './utils/chain-config';
 import { ConfigService } from '@nestjs/config';
 
 // CCTP v2 Contract ABIs
@@ -79,11 +74,7 @@ export class CctpService {
     }
   };
 
-  constructor(
-    @InjectRepository(CctpHistory)
-    private readonly historyRepo: Repository<CctpHistory>,
-    private configService: ConfigService
-  ) {}
+  constructor(private configService: ConfigService) {}
 
   private getProvider(chain: string) {
     const config = this.chainConfigs[chain];
@@ -91,13 +82,15 @@ export class CctpService {
     return new ethers.JsonRpcProvider(config.rpc);
   }
 
-  private getTokenMessengerContract(chain: string, signer: ethers.Signer) {
+  private getTokenMessengerContract(chain: string, signer: ethers.Wallet) {
     const config = this.chainConfigs[chain];
+    if (!config) throw new Error(`Unsupported chain: ${chain}`);
     return new ethers.Contract(config.tokenMessenger, TOKEN_MESSENGER_ABI, signer);
   }
 
-  private getUsdcContract(chain: string, signer: ethers.Signer) {
+  private getUsdcContract(chain: string, signer: ethers.Wallet) {
     const config = this.chainConfigs[chain];
+    if (!config) throw new Error(`Unsupported chain: ${chain}`);
     return new ethers.Contract(config.usdcContract, USDC_ABI, signer);
   }
 
@@ -232,10 +225,6 @@ export class CctpService {
       console.error('CCTP transaction failed:', error);
       throw error;
     }
-  }
-
-  async findAllHistory() {
-    return this.historyRepo.find({ order: { createdAt: 'DESC' } });
   }
 
   async initiateTransfer(request: TransferRequest): Promise<TransferStatus> {
