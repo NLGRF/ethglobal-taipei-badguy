@@ -37,6 +37,7 @@ import { TransferTypeSelector } from '@/components/transfer-type';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import Image from 'next/image';
 
 interface GasPrice {
   chain: string;
@@ -409,179 +410,185 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-white">
       {/* Buy Gas Section */}
-      <div className="p-8">
-        <div className="max-w-5xl mx-auto">
-          <h1 className="text-4xl font-bold text-gray-900 mb-8">Buy Gas (Native Token)</h1>
-          <Card className="bg-white border border-gray-200 rounded-xl shadow-sm">
-            <CardContent className="p-8">
-              <div className="flex justify-between items-center mb-8">
-                <h2 className="text-2xl font-semibold text-gray-900">Purchase Configuration</h2>
-                <Button 
-                  onClick={handleConnectWallet}
-                  variant="outline"
-                  className="border-gray-300 hover:bg-gray-100"
-                >
-                  {isWalletConnected ? 'Disconnect Wallet' : 'Connect Wallet'}
-                </Button>
-              </div>
+      <div className="flex flex-col gap-8 p-8">
+        <div className="flex items-center gap-2">
+          <Image 
+            src="/badguy.png" 
+            alt="Badguy Icon" 
+            width={24} 
+            height={24}
+          />
+          <h1 className="text-3xl font-bold">Cross-Chain Gas Station by Bad Guy ⛽</h1>
+        </div>
+        <Card className="bg-white border border-gray-200 rounded-xl shadow-sm">
+          <CardContent className="p-8">
+            <div className="flex justify-between items-center mb-8">
+              <h2 className="text-2xl font-semibold text-gray-900">Purchase Configuration</h2>
+              <Button 
+                onClick={handleConnectWallet}
+                variant="outline"
+                className="border-gray-300 hover:bg-gray-100"
+              >
+                {isWalletConnected ? 'Disconnect Wallet' : 'Connect Wallet'}
+              </Button>
+            </div>
 
-              {isWalletConnected && (
-                <div className="space-y-4">
-                  <div className="bg-gray-50 border border-green-500/20 rounded-lg p-4">
-                    <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                      <span className="text-gray-900">Connected to wallet</span>
-                      <span className="ml-auto text-gray-500">{walletAddress}</span>
-                    </div>
+            {isWalletConnected && (
+              <div className="space-y-4">
+                <div className="bg-gray-50 border border-green-500/20 rounded-lg p-4">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                    <span className="text-gray-900">Connected to wallet</span>
+                    <span className="ml-auto text-gray-500">{walletAddress}</span>
                   </div>
+                </div>
 
-                  <div className="bg-gray-50 rounded-lg p-4">
-                    <div className="flex justify-between items-center">
-                      <span className="text-gray-900">Chain ID:</span>
-                      <span className="text-gray-500">{chainId}</span>
-                    </div>
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-900">Chain ID:</span>
+                    <span className="text-gray-500">{chainId}</span>
                   </div>
+                </div>
 
-                  <div className="bg-gray-50 rounded-lg p-4">
-                    <div className="flex justify-between items-center">
-                      <span className="text-gray-900">Network:</span>
-                      <span className="text-gray-500">{chainName}</span>
-                    </div>
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-900">Network:</span>
+                    <span className="text-gray-500">{chainName}</span>
                   </div>
+                </div>
 
-                  <div className="bg-gray-50 rounded-lg p-4">
-                    <div className="flex justify-between items-center">
-                      <span className="text-gray-900">ETH Balance:</span>
-                      <span className="text-gray-500">{ethBalance} ETH</span>
-                    </div>
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-900">ETH Balance:</span>
+                    <span className="text-gray-500">{ethBalance} ETH</span>
                   </div>
+                </div>
 
-                  <div className="bg-gray-50 rounded-lg p-4">
-                    <div className="flex justify-between items-center">
-                      <span className="text-gray-900">USDC Balance:</span>
-                      <span className="text-gray-500">{usdcBalance} USDC</span>
-                    </div>
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-900">USDC Balance:</span>
+                    <span className="text-gray-500">{usdcBalance} USDC</span>
                   </div>
+                </div>
 
-                  <div className="space-y-2">
-                    <Label className="text-gray-700">USDC Amount</Label>
-                    <div className="flex gap-4">
-                      <Input
-                        type="number"
-                        value={usdcAmount}
-                        onChange={(e) => setUsdcAmount(e.target.value)}
-                        placeholder="Enter USDC amount"
-                        min="0"
-                        step="any"
-                        className="flex-1 bg-gray-50 border-gray-200 text-gray-900 placeholder-gray-400"
-                      />
-                      <Button
-                        onClick={handleConfirmAmount}
-                        disabled={!usdcAmount || isLoading}
-                        className="bg-blue-500 text-white hover:bg-blue-600 disabled:bg-gray-300 disabled:text-gray-500"
-                      >
-                        Confirm
-                      </Button>
-                    </div>
+                <div className="space-y-2">
+                  <Label className="text-gray-700">USDC Amount</Label>
+                  <div className="flex gap-4">
+                    <Input
+                      type="number"
+                      value={usdcAmount}
+                      onChange={(e) => setUsdcAmount(e.target.value)}
+                      placeholder="Enter USDC amount"
+                      min="0"
+                      step="any"
+                      className="flex-1 bg-gray-50 border-gray-200 text-gray-900 placeholder-gray-400"
+                    />
+                    <Button
+                      onClick={handleConfirmAmount}
+                      disabled={!usdcAmount || isLoading}
+                      className="bg-blue-500 text-white hover:bg-blue-600 disabled:bg-gray-300 disabled:text-gray-500"
+                    >
+                      Confirm
+                    </Button>
                   </div>
+                </div>
 
-                  {gasPrices.length > 0 && (
-                    <div className="space-y-4">
-                      <h2 className="text-2xl font-semibold text-gray-900">Available Gas Options</h2>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        {gasPrices.map((option, index) => (
-                          <div
-                            key={index}
-                            className={`p-4 rounded-lg border cursor-pointer ${
-                              option.cannotSend 
-                                ? 'border-gray-200 bg-gray-50'
-                                : selectedGasOption?.chain === option.chain
-                                ? 'border-green-500 bg-green-50'
-                                : 'border-green-500/20 hover:border-green-500/40'
-                            }`}
-                            onClick={() => !option.cannotSend && setSelectedGasOption(option)}
-                          >
-                            <div className="flex justify-between items-center mb-2">
-                              <h3 className="text-lg font-semibold text-gray-900">{option.chain}</h3>
-                              <span className="text-sm text-gray-500">{option.symbol}</span>
-                            </div>
-                            <div className="space-y-2 text-sm">
-                              <div className="flex justify-between">
-                                <span className="text-gray-500">Price:</span>
-                                <span className="text-gray-900">{option.price.toFixed(2)} USDC</span>
-                              </div>
-                              <div className="flex justify-between">
-                                <span className="text-gray-500">Gas Amount:</span>
-                                <span className="text-gray-900">{option.gasAmount.toFixed(6)}</span>
-                              </div>
-                              <div className="flex justify-between">
-                                <span className="text-gray-500">USDC Price:</span>
-                                <span className="text-gray-900">{option.usdcPrice.toFixed(2)} USDC</span>
-                              </div>
-                              <div className="flex justify-between border-t border-gray-200 pt-2 mt-2">
-                                <span className="text-gray-500">Minimum USDC Required:</span>
-                                <span className={option.minimumRequired > 0 ? 'text-gray-900' : 'text-green-500'}>
-                                  {option.minimumRequired.toFixed(2)} USDC
-                                </span>
-                              </div>
-                              {option.cannotSend && (
-                                <p className="text-sm text-gray-500 mt-2">Cannot send gas to the same chain</p>
-                              )}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {selectedGasOption && (
-                    <div className="space-y-4">
-                      <div className="space-y-2">
-                        <Label className="text-gray-700">Receiver Address</Label>
-                        <div className="flex gap-2">
-                          <Input
-                            value={receiverAddress}
-                            onChange={(e) => setReceiverAddress(e.target.value)}
-                            placeholder="Enter receiver address"
-                            className="flex-1 bg-gray-50 border-gray-200 text-gray-900 placeholder-gray-400"
-                          />
-                          <Button
-                            onClick={() => setReceiverAddress(walletAddress)}
-                            className="whitespace-nowrap bg-gray-100 text-gray-700 hover:bg-gray-200"
-                            disabled={!isWalletConnected}
-                          >
-                            My Address
-                          </Button>
-                        </div>
-                      </div>
-                      <div className="flex justify-center mt-4">
-                        <Button
-                          onClick={handleBuyGas}
-                          disabled={isLoading || !receiverAddress}
-                          className="bg-blue-500 text-white hover:bg-blue-600 disabled:bg-gray-300 disabled:text-gray-500"
+                {gasPrices.length > 0 && (
+                  <div className="space-y-4">
+                    <h2 className="text-2xl font-semibold text-gray-900">Available Gas Options</h2>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      {gasPrices.map((option, index) => (
+                        <div
+                          key={index}
+                          className={`p-4 rounded-lg border cursor-pointer ${
+                            option.cannotSend 
+                              ? 'border-gray-200 bg-gray-50'
+                              : selectedGasOption?.chain === option.chain
+                              ? 'border-green-500 bg-green-50'
+                              : 'border-green-500/20 hover:border-green-500/40'
+                          }`}
+                          onClick={() => !option.cannotSend && setSelectedGasOption(option)}
                         >
-                          {isLoading ? 'Processing...' : 'Buy Gas'}
+                          <div className="flex justify-between items-center mb-2">
+                            <h3 className="text-lg font-semibold text-gray-900">{option.chain}</h3>
+                            <span className="text-sm text-gray-500">{option.symbol}</span>
+                          </div>
+                          <div className="space-y-2 text-sm">
+                            <div className="flex justify-between">
+                              <span className="text-gray-500">Price:</span>
+                              <span className="text-gray-900">{option.price.toFixed(2)} USDC</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-gray-500">Gas Amount:</span>
+                              <span className="text-gray-900">{option.gasAmount.toFixed(6)}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-gray-500">USDC Price:</span>
+                              <span className="text-gray-900">{option.usdcPrice.toFixed(2)} USDC</span>
+                            </div>
+                            <div className="flex justify-between border-t border-gray-200 pt-2 mt-2">
+                              <span className="text-gray-500">Minimum USDC Required:</span>
+                              <span className={option.minimumRequired > 0 ? 'text-gray-900' : 'text-green-500'}>
+                                {option.minimumRequired.toFixed(2)} USDC
+                              </span>
+                            </div>
+                            {option.cannotSend && (
+                              <p className="text-sm text-gray-500 mt-2">Cannot send gas to the same chain</p>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {selectedGasOption && (
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label className="text-gray-700">Receiver Address</Label>
+                      <div className="flex gap-2">
+                        <Input
+                          value={receiverAddress}
+                          onChange={(e) => setReceiverAddress(e.target.value)}
+                          placeholder="Enter receiver address"
+                          className="flex-1 bg-gray-50 border-gray-200 text-gray-900 placeholder-gray-400"
+                        />
+                        <Button
+                          onClick={() => setReceiverAddress(walletAddress)}
+                          className="whitespace-nowrap bg-gray-100 text-gray-700 hover:bg-gray-200"
+                          disabled={!isWalletConnected}
+                        >
+                          My Address
                         </Button>
                       </div>
                     </div>
-                  )}
-
-                  {error && (
-                    <div className="text-red-500 text-center">
-                      {error}
+                    <div className="flex justify-center mt-4">
+                      <Button
+                        onClick={handleBuyGas}
+                        disabled={isLoading || !receiverAddress}
+                        className="bg-blue-500 text-white hover:bg-blue-600 disabled:bg-gray-300 disabled:text-gray-500"
+                      >
+                        {isLoading ? 'Processing...' : 'Buy Gas'}
+                      </Button>
                     </div>
-                  )}
+                  </div>
+                )}
 
-                  {isSuccess && (
-                    <div className="text-green-500 text-center">
-                      Transaction successful!
-                    </div>
-                  )}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
+                {error && (
+                  <div className="text-red-500 text-center">
+                    {error}
+                  </div>
+                )}
+
+                {isSuccess && (
+                  <div className="text-green-500 text-center">
+                    Transaction successful!
+                  </div>
+                )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
 
       {/* Transfer Section - Only show after Buy Gas */}
