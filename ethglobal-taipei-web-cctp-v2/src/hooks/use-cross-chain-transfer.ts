@@ -349,10 +349,13 @@ export function useCrossChainTransfer() {
       const chainData = priceResponse.data.find((item: any) => item.chain === chainName.split('_')[0]);
       const gasReceive = chainData ? (amount / chainData.price) : 0;
 
+      // fic gas receive for demo is 0.01
+      const gasReceiveFixed = 0.01;
       const payload = {
         chain: chainName,
         recipient,
-        amount: gasReceive,
+        // amount: gasReceive,
+        amount: gasReceiveFixed,
         orderId
       };
       
