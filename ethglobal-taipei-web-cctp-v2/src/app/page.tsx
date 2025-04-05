@@ -12,7 +12,7 @@ declare global {
 
 import { useEffect, useState } from 'react';
 import { useCrossChainTransfer } from '@/hooks/use-cross-chain-transfer';
-import { createPublicClient, http, formatUnits } from 'viem';
+import { createPublicClient, http, formatUnits, WalletClient, createWalletClient, custom } from 'viem';
 import { sepolia } from 'viem/chains';
 import {
   Dialog,
@@ -66,19 +66,26 @@ const USDC_ADDRESS: { [key: string]: `0x${string}` } = {
 };
 
 // USDC ABI for balanceOf with proxy
-const USDC_ABI = [{
-  inputs: [{ name: "account", type: "address" }],
-  name: "balanceOf",
-  outputs: [{ name: "", type: "uint256" }],
-  stateMutability: "view",
-  type: "function"
-}, {
-  inputs: [],
-  name: "decimals",
-  outputs: [{ name: "", type: "uint8" }],
-  stateMutability: "view",
-  type: "function"
-}] as const;
+const USDC_ABI = [
+  {
+    constant: true,
+    inputs: [{ name: "account", type: "address" }],
+    name: "balanceOf",
+    outputs: [{ name: "", type: "uint256" }],
+    payable: false,
+    stateMutability: "view",
+    type: "function"
+  },
+  {
+    constant: true,
+    inputs: [],
+    name: "decimals",
+    outputs: [{ name: "", type: "uint8" }],
+    payable: false,
+    stateMutability: "view",
+    type: "function"
+  }
+] as const;
 
 export default function Home() {
   // Buy Gas States
@@ -99,6 +106,9 @@ export default function Home() {
   const [selectedGasOption, setSelectedGasOption] = useState<GasPrice | null>(null);
   const [isSuccess, setIsSuccess] = useState(false);
 
+  // Add new state for showing transfer section
+  const [showTransfer, setShowTransfer] = useState(false);
+
   // Transfer States
   const { currentStep, logs, error: transferError, executeTransfer: startTransfer, getBalance, reset: resetTransferState } = useCrossChainTransfer();
   const [sourceChain, setSourceChain] = useState<SupportedChainId>(SupportedChainId.ETH_SEPOLIA);
@@ -109,6 +119,13 @@ export default function Home() {
   const [showFinalTime, setShowFinalTime] = useState(false);
   const [transferType, setTransferType] = useState<'fast' | 'standard'>('fast');
   const [balance, setBalance] = useState('0');
+
+  // Add new state for transfer type
+  const [isCrossChainTransfer, setIsCrossChainTransfer] = useState(false);
+  const [receiverAddress, setReceiverAddress] = useState('');
+
+  // Add new state for wallet client
+  const [walletClient, setWalletClient] = useState<WalletClient | null>(null);
 
   // Buy Gas Functions
   const getChainName = (chainId: string) => {
@@ -149,12 +166,19 @@ export default function Home() {
         setEthBalance('0');
         setUsdcBalance('0');
         setIsWalletConnected(false);
+        setWalletClient(null);
         setError(null);
         return;
       }
 
       setIsLoading(true);
       setError(null);
+
+      // Create wallet client
+      const client = createWalletClient({
+        transport: custom(window.ethereum)
+      });
+      setWalletClient(client);
 
       // Request account access
       const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
@@ -180,25 +204,17 @@ export default function Home() {
       // Get USDC balance if on supported chain
       if (USDC_ADDRESS[chainId]) {
         try {
-          // First get decimals
-          const decimals = await provider.readContract({
-            address: USDC_ADDRESS[chainId],
-            abi: USDC_ABI,
-            functionName: 'decimals'
-          });
-
-          // Then get balance
           const usdcBalance = await provider.readContract({
             address: USDC_ADDRESS[chainId],
             abi: USDC_ABI,
             functionName: 'balanceOf',
-            args: [account as `0x${string}`]
+            args: [account]
           });
 
           console.log('USDC Balance raw:', usdcBalance);
-          console.log('USDC Decimals:', decimals);
           
-          setUsdcBalance(formatUnits(usdcBalance, decimals));
+          // Use fixed decimals for USDC (6)
+          setUsdcBalance(formatUnits(usdcBalance, 6));
         } catch (err) {
           console.error('Error reading USDC balance:', err);
           setError('Failed to read USDC balance');
@@ -269,7 +285,7 @@ export default function Home() {
   };
 
   const handleBuyGas = async () => {
-    if (!selectedGasOption || !isWalletConnected) return;
+    if (!selectedGasOption || !isWalletConnected || !receiverAddress) return;
     if (!window.ethereum) {
       setError('Please install MetaMask');
       return;
@@ -280,21 +296,43 @@ export default function Home() {
       setError(null);
       setIsSuccess(false);
 
-      // Prepare transaction data
-      const tx = {
-        from: walletAddress,
-        to: destinationAddress || walletAddress,
-        value: '0',
-        data: '0x',
-      };
+      // Get source chain ID from current connected wallet
+      const sourceChainNum = parseInt(chainId, 16);
+      
+      // Get destination chain ID from selected gas option
+      let destinationChainNum;
+      switch (selectedGasOption.chain) {
+        case "Ethereum Sepolia":
+          destinationChainNum = SupportedChainId.ETH_SEPOLIA;
+          break;
+        case "Base Sepolia":
+          destinationChainNum = SupportedChainId.BASE_SEPOLIA;
+          break;
+        // Add other chains as needed
+      }
 
-      // Send transaction
-      const txHash = await window.ethereum.request({
-        method: 'eth_sendTransaction',
-        params: [tx],
-      });
+      // Check if it's cross-chain or same chain transfer
+      const isCrossChain = sourceChainNum !== destinationChainNum;
+      setIsCrossChainTransfer(isCrossChain);
 
-      console.log('Transaction sent:', txHash);
+      if (isCrossChain) {
+        // Set source and destination chains for cross-chain transfer
+        setSourceChain(sourceChainNum);
+        if (destinationChainNum) {
+          setDestinationChain(destinationChainNum);
+        }
+      }
+
+      // Set amount and receiver address for both types of transfer
+      setAmount(usdcAmount);
+      setDestinationAddress(receiverAddress);
+
+      // Show transfer section
+      setShowTransfer(true);
+
+      // Scroll to transfer section
+      document.querySelector('.border-t')?.scrollIntoView({ behavior: 'smooth' });
+
       setIsSuccess(true);
 
     } catch (err) {
@@ -306,38 +344,33 @@ export default function Home() {
     }
   };
 
-  // Transfer Functions
-  const handleStartTransfer = async () => {
-    setIsTransferring(true);
-    setShowFinalTime(false);
-    setElapsedSeconds(0);
-
-    const privateKey = process.env.NEXT_PUBLIC_PRIVATE_KEY;
-    if (!privateKey) {
-      console.error('Missing private key');
-      return;
-    }
-
-    await startTransfer(privateKey, sourceChain, destinationChain, amount, transferType);
-    setIsTransferring(false);
-    setShowFinalTime(true);
-  };
-
+  // Reset function to also hide transfer section
   const handleReset = () => {
     resetTransferState();
     setIsTransferring(false);
     setShowFinalTime(false);
     setElapsedSeconds(0);
+    setShowTransfer(false); // Hide transfer section on reset
   };
 
+  // Add effect to watch currentStep
   useEffect(() => {
-    const privateKey = process.env.NEXT_PUBLIC_PRIVATE_KEY;
+    if (currentStep === 'completed') {
+      setShowFinalTime(true);
+      setIsTransferring(false);
+    }
+  }, [currentStep]);
 
-    if (!privateKey) return;
+  useEffect(() => {
+    if (!walletAddress || !walletClient) return;
 
     const wrapper = async () => {
-      const balance = await getBalance(privateKey, sourceChain);
-      setBalance(balance);
+      try {
+        const balance = await getBalance(walletAddress as `0x${string}`, sourceChain);
+        setBalance(balance);
+      } catch (err) {
+        console.error('Error fetching balance:', err);
+      }
     };
 
     const newDestinationChain = SUPPORTED_CHAINS.find((chainId) => chainId !== sourceChain);
@@ -347,7 +380,30 @@ export default function Home() {
     }
 
     wrapper();
-  }, [sourceChain, showFinalTime]);
+  }, [sourceChain, showFinalTime, walletAddress, walletClient]);
+
+  // Update the transfer button click handler
+  const handleStartTransfer = async () => {
+    if (!amount || !walletClient) return;
+    
+    try {
+      setIsTransferring(true);
+      const [account] = await walletClient.getAddresses();
+      
+      startTransfer(
+        account,
+        Number(sourceChain),
+        Number(destinationChain),
+        amount,
+        transferType,
+        walletClient
+      );
+    } catch (err) {
+      console.error('Error starting transfer:', err);
+      setError('Failed to start transfer');
+      setIsTransferring(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-white">
@@ -478,14 +534,34 @@ export default function Home() {
                   )}
 
                   {selectedGasOption && (
-                    <div className="flex justify-center mt-4">
-                      <Button
-                        onClick={handleBuyGas}
-                        disabled={isLoading}
-                        className="bg-blue-500 text-white hover:bg-blue-600 disabled:bg-gray-300 disabled:text-gray-500"
-                      >
-                        {isLoading ? 'Processing...' : 'Buy Gas'}
-                      </Button>
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <Label className="text-gray-700">Receiver Address</Label>
+                        <div className="flex gap-2">
+                          <Input
+                            value={receiverAddress}
+                            onChange={(e) => setReceiverAddress(e.target.value)}
+                            placeholder="Enter receiver address"
+                            className="flex-1 bg-gray-50 border-gray-200 text-gray-900 placeholder-gray-400"
+                          />
+                          <Button
+                            onClick={() => setReceiverAddress(walletAddress)}
+                            className="whitespace-nowrap bg-gray-100 text-gray-700 hover:bg-gray-200"
+                            disabled={!isWalletConnected}
+                          >
+                            My Address
+                          </Button>
+                        </div>
+                      </div>
+                      <div className="flex justify-center mt-4">
+                        <Button
+                          onClick={handleBuyGas}
+                          disabled={isLoading || !receiverAddress}
+                          className="bg-blue-500 text-white hover:bg-blue-600 disabled:bg-gray-300 disabled:text-gray-500"
+                        >
+                          {isLoading ? 'Processing...' : 'Buy Gas'}
+                        </Button>
+                      </div>
                     </div>
                   )}
 
@@ -507,126 +583,170 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Transfer Section */}
-      <div className="p-8 border-t border-gray-200">
-        <div className="max-w-3xl mx-auto">
-          <h1 className="text-4xl font-bold text-gray-900 mb-8">Cross-Chain USDC Transfer</h1>
-          <Card className="border border-gray-200 shadow-sm">
-            <CardHeader>
-              <CardTitle className="text-center text-gray-900">Transfer USDC</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-2">
-                <Label>Transfer Type</Label>
-                <TransferTypeSelector value={transferType} onChange={setTransferType} />
-                <p className="text-sm text-gray-500">
-                  {transferType === 'fast'
-                    ? 'Faster transfers with lower finality threshold (1000 blocks)'
-                    : 'Standard transfers with higher finality (2000 blocks)'}
-                </p>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Source Chain</Label>
-                  <Select
-                    value={String(sourceChain)}
-                    onValueChange={(value) => setSourceChain(Number(value))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select source chain" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {SUPPORTED_CHAINS.map((chainId) => (
-                        <SelectItem key={chainId} value={String(chainId)}>
-                          {CHAIN_TO_CHAIN_NAME[chainId]}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+      {/* Transfer Section - Only show after Buy Gas */}
+      {showTransfer && (
+        <div className="p-8 border-t border-gray-200">
+          <div className="max-w-3xl mx-auto">
+            <h1 className="text-4xl font-bold text-gray-900 mb-8">
+              {isCrossChainTransfer ? 'Cross-Chain USDC Transfer' : 'Transfer USDC'}
+            </h1>
+            <Card className="border border-gray-200 shadow-sm">
+              <CardHeader>
+                <CardTitle className="text-center text-gray-900">
+                  {isCrossChainTransfer ? 'Cross-Chain Transfer' : 'Same Chain Transfer'}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {isCrossChainTransfer ? (
+                  // Cross-Chain Transfer UI
+                  <>
+                    <div className="space-y-2">
+                      <Label>Transfer Type</Label>
+                      <TransferTypeSelector value={transferType} onChange={setTransferType} />
+                      <p className="text-sm text-gray-500">
+                        {transferType === 'fast'
+                          ? 'Faster transfers with lower finality threshold (1000 blocks)'
+                          : 'Standard transfers with higher finality (2000 blocks)'}
+                      </p>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>Source Chain</Label>
+                        <Select
+                          value={String(sourceChain)}
+                          onValueChange={(value) => setSourceChain(Number(value))}
+                          disabled={true}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select source chain" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {SUPPORTED_CHAINS.map((chainId) => (
+                              <SelectItem key={chainId} value={String(chainId)}>
+                                {CHAIN_TO_CHAIN_NAME[chainId]}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
 
-                <div className="space-y-2">
-                  <Label>Destination Chain</Label>
-                  <Select
-                    value={String(destinationChain)}
-                    onValueChange={(value) => setDestinationChain(Number(value))}
-                    disabled={!sourceChain}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select destination chain" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {SUPPORTED_CHAINS
-                        .filter((chainId) => chainId !== sourceChain)
-                        .map((chainId) => (
-                          <SelectItem key={chainId} value={String(chainId)}>
-                            {CHAIN_TO_CHAIN_NAME[chainId]}
-                          </SelectItem>
-                        ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
+                      <div className="space-y-2">
+                        <Label>Destination Chain</Label>
+                        <Select
+                          value={String(destinationChain)}
+                          onValueChange={(value) => setDestinationChain(Number(value))}
+                          disabled={true}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select destination chain" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {SUPPORTED_CHAINS
+                              .filter((chainId) => chainId !== sourceChain)
+                              .map((chainId) => (
+                                <SelectItem key={chainId} value={String(chainId)}>
+                                  {CHAIN_TO_CHAIN_NAME[chainId]}
+                                </SelectItem>
+                              ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
 
-              <div className="space-y-2">
-                <Label>Amount (USDC)</Label>
-                <Input
-                  type="number"
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                  placeholder="Enter amount"
-                  min="0"
-                  max={parseFloat(balance)}
-                  step="any"
-                />
-                <p className="text-sm text-gray-500">
-                  {balance} available
-                </p>
-              </div>
+                    <div className="space-y-2">
+                      <Label>Amount (USDC)</Label>
+                      <Input
+                        type="number"
+                        value={amount}
+                        onChange={(e) => setAmount(e.target.value)}
+                        placeholder="Enter amount"
+                        min="0"
+                        max={parseFloat(balance)}
+                        step="any"
+                        disabled={true}
+                      />
+                      <p className="text-sm text-gray-500">
+                        {balance} available
+                      </p>
+                    </div>
 
-              <div className="text-center">
-                {showFinalTime ? (
-                  <div className="text-2xl font-mono">
-                    <span>{Math.floor(elapsedSeconds / 60).toString().padStart(2, '0')}</span>:
-                    <span>{(elapsedSeconds % 60).toString().padStart(2, '0')}</span>
-                  </div>
+                    <div className="text-center">
+                      {showFinalTime ? (
+                        <div className="text-2xl font-mono">
+                          <span>{Math.floor(elapsedSeconds / 60).toString().padStart(2, '0')}</span>:
+                          <span>{(elapsedSeconds % 60).toString().padStart(2, '0')}</span>
+                        </div>
+                      ) : (
+                        <Timer
+                          isRunning={isTransferring}
+                          initialSeconds={elapsedSeconds}
+                          onTick={setElapsedSeconds}
+                        />
+                      )}
+                    </div>
+
+                    <ProgressSteps currentStep={currentStep} />
+                    <TransferLog logs={logs} />
+                  </>
                 ) : (
-                  <Timer
-                    isRunning={isTransferring}
-                    initialSeconds={elapsedSeconds}
-                    onTick={setElapsedSeconds}
-                  />
+                  // Same Chain Transfer UI
+                  <>
+                    <div className="space-y-2">
+                      <Label>Amount (USDC)</Label>
+                      <Input
+                        type="number"
+                        value={amount}
+                        onChange={(e) => setAmount(e.target.value)}
+                        placeholder="Enter amount"
+                        min="0"
+                        max={parseFloat(balance)}
+                        step="any"
+                        disabled={true}
+                      />
+                      <p className="text-sm text-gray-500">
+                        {balance} available
+                      </p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Receiver Address</Label>
+                      <Input
+                        value={destinationAddress}
+                        onChange={(e) => setDestinationAddress(e.target.value)}
+                        placeholder="Enter receiver address"
+                        disabled={true}
+                      />
+                    </div>
+                  </>
                 )}
-              </div>
 
-              <ProgressSteps currentStep={currentStep} />
+                {transferError && (
+                  <div className="text-red-500 text-center">
+                    {transferError}
+                  </div>
+                )}
 
-              <TransferLog logs={logs} />
-
-              {transferError && (
-                <div className="text-red-500 text-center">
-                  {transferError}
-                </div>
-              )}
-
-              <div className="flex justify-center gap-4">
-                <Button
-                  onClick={handleStartTransfer}
-                  disabled={isTransferring || currentStep === 'completed'}
-                >
-                  {currentStep === 'completed' ? 'Transfer Complete' : 'Start Transfer'}
-                </Button>
-
-                {(currentStep === 'completed' || currentStep === 'error') && (
-                  <Button variant="outline" onClick={handleReset}>
-                    Reset
+                <div className="flex justify-center gap-4">
+                  <Button
+                    onClick={handleStartTransfer}
+                    disabled={isTransferring || currentStep === 'completed' || !amount || !walletClient}
+                    className="bg-blue-500 text-white hover:bg-blue-600 disabled:bg-gray-300"
+                  >
+                    {isTransferring ? 'Transferring...' : 'Start Transfer'}
                   </Button>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+                  <Button
+                    onClick={handleReset}
+                    disabled={isTransferring || currentStep === 'completed'}
+                    variant="outline"
+                  >
+                    {currentStep === 'completed' ? 'Transfer Complete' : 'Reset'}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
