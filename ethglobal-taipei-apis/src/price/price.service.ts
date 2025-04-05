@@ -4,21 +4,68 @@ import axios from 'axios';
 import { PriceResponseDto } from './dto/price.dto';
 import { ConvertResponseDto } from './dto/price.dto';
 
-interface CoinMarketCapResponse {
-  data: {
-    [key: string]: {
-      quote: {
-        [key: string]: {
-          price: number;
-        };
-      };
-    };
-  };
+interface TokenConfig {
+  symbol: string;
+  gasName: string;
 }
 
 @Injectable()
 export class PriceService {
+  private readonly chainConfigs: Record<string, TokenConfig> = {
+    'Ethereum': { symbol: 'ETH', gasName: 'ETH' },
+    'Base': { symbol: 'BASE', gasName: 'ETH' },
+    'Polygon': { symbol: 'MATIC', gasName: 'MATIC' },
+    'Celo': { symbol: 'CELO', gasName: 'CELO' },
+    'Rootstock': { symbol: 'RBTC', gasName: 'RBTC' }
+  };
+
   constructor(private configService: ConfigService) {}
+
+  async getGasPrice(chain: string, usdcAmount: number = 1): Promise<PriceResponseDto> {
+    const apiKey = this.configService.get<string>('CMC_API_KEY');
+    const apiUrl = this.configService.get<string>('CMC_API_URL');
+    const chainConfig = this.chainConfigs[chain];
+
+    if (!apiKey || !apiUrl) {
+      throw new Error('Missing CoinMarketCap API configuration');
+    }
+
+    if (!chainConfig) {
+      throw new Error(`Unsupported chain: ${chain}`);
+    }
+
+    try {
+      const response = await axios.get(apiUrl, {
+        params: {
+          symbol: chainConfig.symbol,
+          convert: 'USD'
+        },
+        headers: {
+          'X-CMC_PRO_API_KEY': apiKey
+        }
+      });
+
+      const tokenData = response.data?.data?.[chainConfig.symbol];
+      if (!tokenData?.quote?.USD?.price) {
+        throw new Error('Failed to get price from response');
+      }
+
+      const tokenPrice = tokenData.quote.USD.price;
+      const gasAmount = usdcAmount / tokenPrice;
+
+      return {
+        chain,
+        gasName: chainConfig.gasName,
+        price: tokenPrice,
+        gasUnit: 'GWEI',
+        gasAmount,
+        usdcPrice: 1 // USDC is pegged to USD
+      };
+    } catch (error) {
+      console.error(`Failed to fetch ${chain} price:`, error);
+      throw error;
+    }
+  }
 
   async getAllGasPrices(usdcAmount: number = 1): Promise<PriceResponseDto[]> {
     const chains = ['Ethereum', 'Base', 'Polygon', 'Celo', 'Rootstock'];
@@ -26,50 +73,6 @@ export class PriceService {
       chains.map(chain => this.getGasPrice(chain, usdcAmount))
     );
     return prices;
-  }
-
-  async getGasPrice(chain: string, usdcAmount: number = 1): Promise<PriceResponseDto> {
-    const apiKey = this.configService.get<string>('CMC_API_KEY') || '';
-    const apiUrl = this.configService.get<string>('CMC_API_URL') || '';
-    const ethSymbol = this.configService.get<string>('CMC_ETH_SYMBOL') || 'ETH';
-    const usdcSymbol = this.configService.get<string>('CMC_USDC_SYMBOL') || 'USDC';
-
-    if (!apiKey || !apiUrl) {
-      throw new Error('Missing CoinMarketCap API configuration');
-    }
-
-    try {
-      const response = await axios.get<CoinMarketCapResponse>(apiUrl, {
-        params: {
-          symbol: `${ethSymbol},${usdcSymbol}`,
-          convert: 'USD',
-        },
-        headers: {
-          'X-CMC_PRO_API_KEY': apiKey,
-        },
-      });
-
-      const ethData = response.data?.data?.[ethSymbol]?.quote?.USD;
-      const usdcData = response.data?.data?.[usdcSymbol]?.quote?.USD;
-
-      if (!ethData?.price || !usdcData?.price) {
-        throw new Error('Failed to get price from response');
-      }
-
-      // Calculate gas amount in GWEI: USDC amount / ETH price
-      const gasAmount = usdcAmount / ethData.price;
-
-      return {
-        chain,
-        gasName: 'ETH',
-        price: ethData.price,
-        gasUnit: 'GWEI',
-        gasAmount,
-        usdcPrice: usdcData.price,
-      };
-    } catch (error) {
-      throw new Error(`Failed to fetch gas price: ${error.message}`);
-    }
   }
 
   async convertUsdcToEth(chain: string, usdcAmount: number): Promise<ConvertResponseDto> {
