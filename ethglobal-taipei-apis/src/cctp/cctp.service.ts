@@ -59,11 +59,23 @@ export class CctpService {
       usdcContract: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',
       domain: 6
     },
-    'Linea': {
-      rpc: 'https://rpc.linea.build',
-      tokenMessenger: '0x177d36dBE2271A4DdB2Ad8304d82628eb921d790',
-      usdcContract: '0x176211869cA2b568f2A7D4EE941E073a821EE1ff',
-      domain: 2
+    'Polygon': {
+      rpc: 'https://polygon-rpc.com',
+      tokenMessenger: '0x9daF8c91AEFAE50b9c0E69629D3F6Ca40cA3B3FE',
+      usdcContract: '0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359',
+      domain: 7
+    },
+    'Celo': {
+      rpc: 'https://forno.celo.org',
+      tokenMessenger: '0xB3F7472B22708311BA99366AF7d9Ec45D96F3B76',
+      usdcContract: '0x37f750B7cC259A2f741AF45294f6a16572CF5cAd',
+      domain: 14
+    },
+    'Rootstock': {
+      rpc: 'https://public-node.rsk.co',
+      tokenMessenger: '0x9f3B8679c73C2Fef8b59B4f3444d4e156fb70AA5',
+      usdcContract: '0x8C25bA0557e55c7F86d3B53811d5A403fF2Ef949',
+      domain: 30
     }
   };
 

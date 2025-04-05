@@ -21,7 +21,7 @@ export class PriceService {
   constructor(private configService: ConfigService) {}
 
   async getAllGasPrices(usdcAmount: number = 1): Promise<PriceResponseDto[]> {
-    const chains = ['Ethereum', 'Base', 'Linea'];
+    const chains = ['Ethereum', 'Base', 'Polygon', 'Celo', 'Rootstock'];
     const prices = await Promise.all(
       chains.map(chain => this.getGasPrice(chain, usdcAmount))
     );
@@ -86,7 +86,7 @@ export class PriceService {
   }
 
   async convertUsdcToEthAllChains(usdcAmount: number): Promise<ConvertResponseDto[]> {
-    const chains = ['Ethereum', 'Base', 'Linea'];
+    const chains = ['Ethereum', 'Base', 'Polygon', 'Celo', 'Rootstock'];
     const conversions = await Promise.all(
       chains.map(chain => this.convertUsdcToEth(chain, usdcAmount))
     );
