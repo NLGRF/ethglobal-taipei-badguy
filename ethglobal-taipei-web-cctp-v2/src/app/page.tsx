@@ -14,7 +14,7 @@ declare global {
 import { useEffect, useState } from 'react';
 import { useCrossChainTransfer } from '@/hooks/use-cross-chain-transfer';
 import { createPublicClient, http, formatUnits, WalletClient, createWalletClient, custom } from 'viem';
-import { sepolia } from 'viem/chains';
+import { sepolia, baseSepolia } from 'viem/chains';
 import {
   Dialog,
   DialogContent,
@@ -65,7 +65,17 @@ interface GasCost {
 
 // USDC Token addresses (testnet)
 const USDC_ADDRESS: { [key: string]: `0x${string}` } = {
-  "0xaa36a7": "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238" // Sepolia USDC
+  "0xaa36a7": "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238", // Sepolia USDC
+  "0x14a34": "0x036CbD53842c5426634e7929541eC2318f3dCF7e"  // Base Sepolia USDC
+};
+
+// Chain icons mapping
+const CHAIN_ICONS: { [key: string]: string } = {
+  "Ethereum Sepolia": "/eth.png",
+  "Base Sepolia": "/base.png",
+  "Polygon Amoy": "/polygon.png",
+  "Celo": "/celo.png",
+  "Rootstock Testnet": "/rbtc.png"
 };
 
 // USDC ABI for balanceOf with proxy
@@ -89,6 +99,14 @@ const USDC_ABI = [
     type: "function"
   }
 ] as const;
+
+const CHAIN_TO_TRUSTWALLET_PATH: { [key: string]: string } = {
+  "Ethereum Sepolia": "ethereum",
+  "Base Sepolia": "base",
+  "Polygon Amoy": "polygon",
+  "Celo": "celo",
+  "Rootstock Testnet": "rootstock"
+};
 
 export default function Home() {
   // Buy Gas States
@@ -195,9 +213,9 @@ export default function Home() {
       setChainName(getChainName(chainId));
       setIsWalletConnected(true);
 
-      // Get ETH balance
+      // Get ETH balance using the current chain
       const provider = createPublicClient({
-        chain: sepolia,
+        chain: chainId === "0x14a34" ? baseSepolia : sepolia,
         transport: http()
       });
       
@@ -476,7 +494,18 @@ export default function Home() {
                           onClick={() => setSelectedGasOption(option)}
                         >
                           <div className="flex justify-between items-center mb-2">
-                            <h3 className="text-lg font-semibold text-gray-900">{option.chain}</h3>
+                            <div className="flex items-center gap-2">
+                              <Image
+                                src={`https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/${CHAIN_TO_TRUSTWALLET_PATH[option.chain]}/info/logo.png`}
+                                alt={`${option.chain} logo`}
+                                width={32}
+                                height={32}
+                                onError={(e: any) => {
+                                  e.currentTarget.src = '/assets/chains/default-chain.png';
+                                }}
+                              />
+                              <h3 className="text-lg font-semibold text-gray-900">{option.chain}</h3>
+                            </div>
                             <span className="text-sm text-gray-500">{option.symbol}</span>
                           </div>
                           <div className="space-y-2 text-sm">
@@ -485,12 +514,12 @@ export default function Home() {
                               <span className="text-gray-900">{option.price?.toFixed(2) || '0.00'} USDC</span>
                             </div>
                             <div className="flex justify-between">
-                              <span className="text-gray-500">Gas Amount:</span>
-                              <span className="text-gray-900">{option.gasAmount?.toFixed(6) || '0.000000'} {option.gasName}</span>
+                              <span className="text-gray-500">Gas Receive:</span>
+                              <span className="text-gray-900">{option.price ? (parseFloat(usdcAmount) / option.price).toFixed(6) : '0.000000'} {option.gasName}</span>
                             </div>
                             <div className="flex justify-between">
-                              <span className="text-gray-500">USDC Price:</span>
-                              <span className="text-gray-900">{option.usdcPrice.toFixed(2)} USDC</span>
+                              {/* <span className="text-gray-500">USDC Price:</span> */}
+                              {/* <span className="text-gray-900">{option.usdcPrice.toFixed(2)} USDC</span> */}
                             </div>
                           </div>
                         </div>

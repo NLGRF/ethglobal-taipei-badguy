@@ -11,7 +11,7 @@ export class PriceService {
   private readonly chainConfigs: Record<string, ChainConfig> = {
     'Ethereum': { symbol: 'ETH', cmcId: '1027' },
     'Base': { symbol: 'ETH', cmcId: '1027' },
-    'Polygon': { symbol: 'MATIC', cmcId: '3890' },
+    'Polygon': { symbol: 'POL', cmcId: '137' },
     'Celo': { symbol: 'CELO', cmcId: '5567' },
     'Rootstock': { symbol: 'RBTC', cmcId: '3626' }
   };
