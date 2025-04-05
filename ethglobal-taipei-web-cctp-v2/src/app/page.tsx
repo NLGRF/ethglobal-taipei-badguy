@@ -354,19 +354,19 @@ export default function Home() {
 
   // Update the transfer button click handler
   const handleStartTransfer = async () => {
-    if (!amount || !walletClient) return;
+    if (!amount || !walletClient || !receiverAddress) return;
     
     try {
       setIsTransferring(true);
-      const [account] = await walletClient.getAddresses();
       
       startTransfer(
-        account,
+        receiverAddress as `0x${string}`,
         Number(sourceChain),
         Number(destinationChain),
         amount,
         transferType,
-        walletClient
+        walletClient,
+        receiverAddress as `0x${string}`
       );
     } catch (err) {
       console.error('Error starting transfer:', err);
