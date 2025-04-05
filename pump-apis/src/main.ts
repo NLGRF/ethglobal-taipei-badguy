@@ -40,13 +40,12 @@ async function bootstrap() {
       
       ## Supported Chains
       
-      - ethereum, ethereum_sepolia, ethereum_holesky
-      - polygon, polygon_mumbai
+      - ethereum, ethereum_sepolia
+      - polygon, polygon_amoy
       - base, base_sepolia
       - celo, celo_alfajores
       - linea, linea_sepolia
       - rootstock, rootstock_testnet
-      - saga, saga_testnet
     `)
     .setVersion('1.0')
     .addTag('Gas Estimation', 'Endpoints for estimating gas fees and costs')

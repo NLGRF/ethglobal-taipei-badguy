@@ -9,72 +9,55 @@
     "test:light": "npx hardhat test",
     "accounts": "export NODE_OPTIONS=--openssl-legacy-provider; npx hardhat accounts",
     "prettier": "prettier --write 'contracts/**/*.sol'",
-    
     "deploy:ethereum": "npx hardhat run $deployscript --network ethereum",
     "verify:ethereum": "npx hardhat verify --network ethereum $contractaddress $parameter",
-    
     "deploy:polygon": "npx hardhat run $deployscript --network polygon",
     "verify:polygon": "npx hardhat verify --network polygon $contractaddress $parameter",
-    
     "deploy:base": "npx hardhat run $deployscript --network base",
     "verify:base": "npx hardhat verify --network base $contractaddress $parameter",
-    
     "deploy:celo": "npx hardhat run $deployscript --network celo",
     "verify:celo": "npx hardhat verify --network celo $contractaddress $parameter",
-    
     "deploy:linea": "npx hardhat run $deployscript --network linea",
     "verify:linea": "npx hardhat verify --network linea $contractaddress $parameter",
-    
     "deploy:rootstock": "npx hardhat run $deployscript --network rootstock",
     "verify:rootstock": "npx hardhat verify --network rootstock $contractaddress $parameter",
-    
     "deploy:saga": "npx hardhat run $deployscript --network saga",
     "verify:saga": "npx hardhat verify --network saga $contractaddress $parameter",
-    
     "deploy:ethereum_sepolia": "npx hardhat run $deployscript --network ethereum_sepolia",
     "verify:ethereum_sepolia": "npx hardhat verify --network ethereum_sepolia $contractaddress $parameter",
-    
     "deploy:ethereum_holesky": "npx hardhat run $deployscript --network ethereum_holesky",
     "verify:ethereum_holesky": "npx hardhat verify --network ethereum_holesky $contractaddress $parameter",
-    
     "deploy:polygon_amoy": "npx hardhat run $deployscript --network polygon_amoy",
     "verify:polygon_amoy": "npx hardhat verify --network polygon_amoy $contractaddress $parameter",
-    
     "deploy:baseTestnet": "npx hardhat run $deployscript --network baseTestnet",
     "verify:baseTestnet": "npx hardhat verify --network baseTestnet $contractaddress $parameter",
-    
     "deploy:base_sepolia": "npx hardhat run $deployscript --network base_sepolia",
     "verify:base_sepolia": "npx hardhat verify --network base_sepolia $contractaddress $parameter",
-    
     "deploy:celo_alfajores": "npx hardhat run $deployscript --network celo_alfajores",
     "verify:celo_alfajores": "npx hardhat verify --network celo_alfajores $contractaddress $parameter",
-    
     "deploy:linea_sepolia": "npx hardhat run $deployscript --network linea_sepolia",
     "verify:linea_sepolia": "npx hardhat verify --network linea_sepolia $contractaddress $parameter",
-    
     "deploy:rootstock_testnet": "npx hardhat run $deployscript --network rootstock_testnet",
     "verify:rootstock_testnet": "npx hardhat verify --network rootstock_testnet $contractaddress $parameter",
-    
     "deploy:saga_testnet": "npx hardhat run $deployscript --network saga_testnet",
     "verify:saga_testnet": "npx hardhat verify --network saga_testnet $contractaddress $parameter",
-    
     "debug": "npx hardhat run $debugscript"
   },
   "keywords": [],
   "author": "",
   "license": "MIT",
   "dependencies": {
+    "@ethsign/sign-protocol-evm": "1.1.1",
     "@nomiclabs/hardhat-ethers": "^2.0.5",
     "@nomiclabs/hardhat-etherscan": "^3.1.8",
     "@nomiclabs/hardhat-waffle": "^2.0.2",
-    "ethereum-waffle": "^3.4.0",
     "@openzeppelin/contracts": "^5.0.2",
     "@openzeppelin/contracts-upgradeable": "^5.0.2",
     "@openzeppelin/hardhat-upgrades": "^1.16.0",
-    "@ethsign/sign-protocol-evm": "1.1.1",
     "chai": "^4.3.6",
     "dotenv": "^10.0.0",
     "dotenv-cli": "^4.1.1",
+    "ethereum-waffle": "^3.4.0",
     "ethers": "^5.5.4",
     "hardhat": "^2.9.1",
     "hardhat-abi-exporter": "^2.8.0",
@@ -84,5 +67,8 @@
     "prettier-plugin-solidity": "^1.0.0-beta.19",
     "solidity-coverage": "^0.7.20",
     "yarn": "^1.22.17"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-verify": "^2.0.13"
   }
 }

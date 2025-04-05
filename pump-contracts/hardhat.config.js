@@ -1,7 +1,7 @@
 require('@nomiclabs/hardhat-waffle');
 require('@nomiclabs/hardhat-ethers');
 require('solidity-coverage');
-require('@nomiclabs/hardhat-etherscan');
+require('@nomicfoundation/hardhat-verify');
 require('hardhat-spdx-license-identifier');
 require('hardhat-gas-reporter');
 require('hardhat-abi-exporter');
@@ -21,17 +21,14 @@ const Chain = {
   CELO: 'celo',
   LINEA: 'linea',
   ROOTSTOCK: 'rootstock',
-  SAGA: 'saga',
   
   // Testnets
   ETHEREUM_SEPOLIA: 'ethereum_sepolia',
-  ETHEREUM_HOLESKY: 'ethereum_holesky',
   POLYGON_AMOY: 'polygon_amoy',
   BASE_SEPOLIA: 'base_sepolia',
   CELO_ALFAJORES: 'celo_alfajores',
   LINEA_SEPOLIA: 'linea_sepolia',
-  ROOTSTOCK_TESTNET: 'rootstock_testnet',
-  SAGA_TESTNET: 'saga_testnet'
+  ROOTSTOCK_TESTNET: 'rootstock_testnet'
 };
 
 // Function to get chainId from Chain enum
@@ -50,14 +47,10 @@ function getChainId(chain) {
       return 59144;
     case Chain.ROOTSTOCK:
       return 30;
-    case Chain.SAGA:
-      return 3232;
     
     // Testnets
     case Chain.ETHEREUM_SEPOLIA:
       return 11155111;
-    case Chain.ETHEREUM_HOLESKY:
-      return 17000;
     case Chain.POLYGON_AMOY:
       return 80002;
     case Chain.BASE_SEPOLIA:
@@ -68,8 +61,6 @@ function getChainId(chain) {
       return 59141;
     case Chain.ROOTSTOCK_TESTNET:
       return 31;
-    case Chain.SAGA_TESTNET:
-      return 3233;
     default:
       throw new Error(`Unknown chain: ${chain}`);
   }
@@ -166,23 +157,11 @@ module.exports = {
       accounts: [process.env.PRIVATE_KEY],
       saveDeployments: true,
     },
-    [Chain.SAGA]: {
-      chainId: getChainId(Chain.SAGA),
-      url: process.env.SAGA_RPC_URL || 'https://mainnet.saga.xyz',
-      accounts: [process.env.PRIVATE_KEY],
-      saveDeployments: true,
-    },
     
     // Testnets
     [Chain.ETHEREUM_SEPOLIA]: {
       chainId: getChainId(Chain.ETHEREUM_SEPOLIA),
       url: process.env.ETHEREUM_SEPOLIA_RPC_URL || 'https://sepolia.infura.io/v3/',
-      accounts: [process.env.PRIVATE_KEY],
-      saveDeployments: true,
-    },
-    [Chain.ETHEREUM_HOLESKY]: {
-      chainId: getChainId(Chain.ETHEREUM_HOLESKY),
-      url: process.env.ETHEREUM_HOLESKY_RPC_URL || 'https://ethereum-holesky.publicnode.com',
       accounts: [process.env.PRIVATE_KEY],
       saveDeployments: true,
     },
@@ -216,12 +195,6 @@ module.exports = {
       accounts: [process.env.PRIVATE_KEY],
       saveDeployments: true,
     },
-    [Chain.SAGA_TESTNET]: {
-      chainId: getChainId(Chain.SAGA_TESTNET),
-      url: process.env.SAGA_TESTNET_RPC_URL || 'https://testnet.saga.xyz',
-      accounts: [process.env.PRIVATE_KEY],
-      saveDeployments: true,
-    },
   },
 
   paths: {
@@ -242,6 +215,8 @@ module.exports = {
       linea: process.env.LINEASCAN_API_KEY,
       sepolia: process.env.ETHERSCAN_API_KEY,
       baseTestnet: process.env.BASESCAN_API_KEY,
+      rootstockTestnet: "api-key-not-needed",
+      polygon_amoy: process.env.POLYGONSCAN_API_KEY
     },
     customChains: [
       {
@@ -306,6 +281,14 @@ module.exports = {
         urls: {
           apiURL: 'https://api-amoy.polygonscan.com/api',
           browserURL: 'https://amoy.polygonscan.com/'
+        }
+      },
+      {
+        network: 'rootstockTestnet',
+        chainId: 31,
+        urls: {
+          apiURL: 'https://explorer.testnet.rsk.co/api',
+          browserURL: 'https://explorer.testnet.rsk.co/'
         }
       },
     ]

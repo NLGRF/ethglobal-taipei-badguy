@@ -6,17 +6,14 @@ export enum Chain {
   CELO = 'celo',
   LINEA = 'linea',
   ROOTSTOCK = 'rootstock',
-  SAGA = 'saga',
   
   // Testnets
   ETHEREUM_SEPOLIA = 'ethereum_sepolia',
-  ETHEREUM_HOLESKY = 'ethereum_holesky',
-  POLYGON_MUMBAI = 'polygon_mumbai',
+  POLYGON_AMOY = 'polygon_amoy',
   BASE_SEPOLIA = 'base_sepolia',
   CELO_ALFAJORES = 'celo_alfajores',
   LINEA_SEPOLIA = 'linea_sepolia',
   ROOTSTOCK_TESTNET = 'rootstock_testnet',
-  SAGA_TESTNET = 'saga_testnet',
 }
 
 export const getChainId = (chain: Chain): number => {
@@ -34,16 +31,12 @@ export const getChainId = (chain: Chain): number => {
       return 59144;
     case Chain.ROOTSTOCK:
       return 30;
-    case Chain.SAGA:
-      return 3232;
     
     // Testnets
     case Chain.ETHEREUM_SEPOLIA:
       return 11155111;
-    case Chain.ETHEREUM_HOLESKY:
-      return 17000;
-    case Chain.POLYGON_MUMBAI:
-      return 80001;
+    case Chain.POLYGON_AMOY:
+      return 80002;
     case Chain.BASE_SEPOLIA:
       return 84532;
     case Chain.CELO_ALFAJORES:
@@ -52,8 +45,6 @@ export const getChainId = (chain: Chain): number => {
       return 59141;
     case Chain.ROOTSTOCK_TESTNET:
       return 31;
-    case Chain.SAGA_TESTNET:
-      return 3233;
     default:
       return 1;
   }
@@ -74,16 +65,12 @@ export const getChainRPC = (chain: Chain): string => {
       return 'https://rpc.linea.build';
     case Chain.ROOTSTOCK:
       return 'https://public-node.rsk.co';
-    case Chain.SAGA:
-      return 'https://mainnet.saga.xyz/rpc';
     
     // Testnets
     case Chain.ETHEREUM_SEPOLIA:
       return 'https://ethereum-sepolia.publicnode.com';
-    case Chain.ETHEREUM_HOLESKY:
-      return 'https://ethereum-holesky.publicnode.com';
-    case Chain.POLYGON_MUMBAI:
-      return 'https://rpc-mumbai.maticvigil.com';
+    case Chain.POLYGON_AMOY:
+      return 'https://rpc-amoy.polygon.technology';
     case Chain.BASE_SEPOLIA:
       return 'https://sepolia.base.org';
     case Chain.CELO_ALFAJORES:
@@ -92,8 +79,6 @@ export const getChainRPC = (chain: Chain): string => {
       return 'https://rpc.sepolia.linea.build';
     case Chain.ROOTSTOCK_TESTNET:
       return 'https://public-node.testnet.rsk.co';
-    case Chain.SAGA_TESTNET:
-      return 'https://testnet.saga.xyz/rpc';
     default:
       return 'https://eth.llamarpc.com';
   }
@@ -114,26 +99,20 @@ export const getGasSellerAddress = (chain: Chain): string => {
       return '0x0000000000000000000000000000000000000000';
     case Chain.ROOTSTOCK:
       return '0x0000000000000000000000000000000000000000';
-    case Chain.SAGA:
-      return '0x0000000000000000000000000000000000000000';
     
     // Testnets
     case Chain.ETHEREUM_SEPOLIA:
       return '0x9285c4Aa8409D2A7A6b29dE2e62e7c3bF9b2dcdE';
-    case Chain.ETHEREUM_HOLESKY:
-      return '0x0000000000000000000000000000000000000000';
-    case Chain.POLYGON_MUMBAI:
-      return '0x0000000000000000000000000000000000000000';
+    case Chain.POLYGON_AMOY:
+      return '0xaC20EF932f62B66D9b402da26E70716695EF2a09';
     case Chain.BASE_SEPOLIA:
-      return '0x0000000000000000000000000000000000000000';
+      return '0xaC20EF932f62B66D9b402da26E70716695EF2a09';
     case Chain.CELO_ALFAJORES:
-      return '0x0000000000000000000000000000000000000000';
+      return '0xaC20EF932f62B66D9b402da26E70716695EF2a09';
     case Chain.LINEA_SEPOLIA:
       return '0x0000000000000000000000000000000000000000';
     case Chain.ROOTSTOCK_TESTNET:
-      return '0x0000000000000000000000000000000000000000';
-    case Chain.SAGA_TESTNET:
-      return '0x0000000000000000000000000000000000000000';
+      return '0xaC20eF932F62B66D9b402Da26E70716695EF2a09';
     default:
       return '0x0000000000000000000000000000000000000000';
   }
