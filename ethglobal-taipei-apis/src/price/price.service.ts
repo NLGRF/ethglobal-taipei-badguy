@@ -1,115 +1,62 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import axios from 'axios';
-import { PriceResponseDto } from './dto/price.dto';
-import { ConvertResponseDto } from './dto/price.dto';
 
-interface TokenConfig {
+interface ChainConfig {
   symbol: string;
-  gasName: string;
+  cmcId: string;
 }
 
 @Injectable()
 export class PriceService {
-  private readonly chainConfigs: Record<string, TokenConfig> = {
-    'Ethereum': { symbol: 'ETH', gasName: 'ETH' },
-    'Base': { symbol: 'BASE', gasName: 'BASE' },
-    'Polygon': { symbol: 'MATIC', gasName: 'MATIC' },
-    'Celo': { symbol: 'CELO', gasName: 'CELO' },
-    'Rootstock': { symbol: 'RBTC', gasName: 'RBTC' }
+  private readonly chainConfigs: Record<string, ChainConfig> = {
+    'Ethereum': { symbol: 'ETH', cmcId: '1027' },
+    'Base': { symbol: 'ETH', cmcId: '1027' },
+    'Polygon': { symbol: 'MATIC', cmcId: '3890' },
+    'Celo': { symbol: 'CELO', cmcId: '5567' },
+    'Rootstock': { symbol: 'RBTC', cmcId: '3626' }
   };
 
   constructor(private configService: ConfigService) {}
 
-  async getAllGasPrices(usdcAmount: number = 1): Promise<PriceResponseDto[]> {
-    const apiKey = this.configService.get<string>('CMC_API_KEY');
-    const apiUrl = this.configService.get<string>('CMC_API_URL');
-
-    if (!apiKey || !apiUrl) {
-      throw new Error('Missing CoinMarketCap API configuration');
-    }
-
+  async getGasPrice(chain: string): Promise<number> {
     try {
-      const symbols = Object.values(this.chainConfigs).map(c => c.symbol).join(',');
-      const response = await axios.get(apiUrl, {
-        params: {
-          symbol: symbols,
-          convert: 'USD'
-        },
+      const config = this.chainConfigs[chain];
+      if (!config) return 0;
+
+      const apiKey = this.configService.get<string>('CMC_API_KEY');
+      if (!apiKey) {
+        console.error('Missing CoinMarketCap API key');
+        return 0;
+      }
+
+      const res = await fetch(`https://pro-api.coinmarketcap.com/v1/cryptocurrency/quotes/latest?id=${config.cmcId}&convert=USDC`, {
         headers: {
           'X-CMC_PRO_API_KEY': apiKey
         }
       });
-
-      const prices: PriceResponseDto[] = [];
-      for (const [chain, config] of Object.entries(this.chainConfigs)) {
-        const tokenData = response.data?.data?.[config.symbol];
-        if (!tokenData?.quote?.USD?.price) {
-          console.error(`No price data for ${chain}`);
-          prices.push({
-            chain,
-            gasName: config.gasName,
-            price: 0,
-            gasUnit: 'GWEI',
-            gasAmount: 0,
-            usdcPrice: 1
-          });
-          continue;
-        }
-
-        const tokenPrice = tokenData.quote.USD.price;
-        const gasAmount = usdcAmount / tokenPrice;
-
-        prices.push({
-          chain,
-          gasName: config.gasName,
-          price: tokenPrice,
-          gasUnit: 'GWEI',
-          gasAmount,
-          usdcPrice: 1
-        });
-      }
-
-      return prices;
+      
+      const data = await res.json();
+      return data.data[config.cmcId].quote.USDC.price;
     } catch (error) {
-      console.error('Failed to fetch prices:', error);
-      return Object.entries(this.chainConfigs).map(([chain, config]) => ({
-        chain,
-        gasName: config.gasName,
-        price: 0,
-        gasUnit: 'GWEI',
-        gasAmount: 0,
-        usdcPrice: 1
-      }));
+      console.error(`Failed to fetch ${chain} price:`, error);
+      return 0;
     }
   }
 
-  async getGasPrice(chain: string, usdcAmount: number = 1): Promise<PriceResponseDto> {
-    const prices = await this.getAllGasPrices(usdcAmount);
-    const price = prices.find(p => p.chain === chain);
-    if (!price) {
-      throw new Error(`Unsupported chain: ${chain}`);
+  async getAllGasPrices(): Promise<Record<string, number>> {
+    const prices: Record<string, number> = {};
+    for (const chain of Object.keys(this.chainConfigs)) {
+      prices[chain] = await this.getGasPrice(chain);
     }
-    return price;
+    return prices;
   }
 
-  async convertUsdcToEth(chain: string, usdcAmount: number): Promise<ConvertResponseDto> {
-    const priceData = await this.getGasPrice(chain);
-    const ethAmount = usdcAmount / priceData.price;
-    
-    return {
-      chain,
-      usdcAmount,
-      ethAmount,
-    };
+  async convertUsdcToEth(amount: number): Promise<number> {
+    const ethPrice = await this.getGasPrice('Ethereum');
+    return ethPrice > 0 ? amount / ethPrice : 0;
   }
 
-  async convertUsdcToEthAllChains(usdcAmount: number): Promise<ConvertResponseDto[]> {
-    const prices = await this.getAllGasPrices(usdcAmount);
-    return prices.map(price => ({
-      chain: price.chain,
-      usdcAmount,
-      ethAmount: price.price > 0 ? usdcAmount / price.price : 0
-    }));
+  getGasName(chain: string): string {
+    return this.chainConfigs[chain]?.symbol || '';
   }
 } 
