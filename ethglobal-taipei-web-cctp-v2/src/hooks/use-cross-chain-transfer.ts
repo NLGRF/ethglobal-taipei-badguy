@@ -75,6 +75,15 @@ const RPC_URLS = {
   ],
 } as const;
 
+interface DeliveryResponse {
+  success: boolean;
+  data: {
+    txHash: string;
+    status: string;
+    confirmations: number;
+  };
+}
+
 export function useCrossChainTransfer() {
   const [currentStep, setCurrentStep] = useState<TransferStep>("idle");
   const [logs, setLogs] = useState<string[]>([]);
@@ -325,10 +334,64 @@ export function useCrossChainTransfer() {
     }
   };
 
+  const notifyDelivery = async (
+    chain: string,
+    recipient: string,
+    amount: number,
+    txHash: string
+  ) => {
+    try {
+      const orderId = `${chain}-${Math.floor(Date.now() / 1000)}`;
+      const payload = {
+        chain,
+        recipient,
+        amount,
+        orderId
+      };
+      
+      addLog(`Sending delivery notification with payload: ${JSON.stringify(payload, null, 2)}`);
+      
+      const response = await axios.post<DeliveryResponse>(
+        'https://pump-apis.onrender.com/delivery/transfer',
+        payload,
+        {
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          timeout: 10000 // 10 seconds timeout
+        }
+      );
+
+      addLog(`Delivery API response: ${JSON.stringify(response.data, null, 2)}`);
+
+      if (response.data.success) {
+        addLog(`Delivery notification successful: ${response.data.data.txHash}`);
+        return response.data;
+      } else {
+        const errorMsg = `Delivery notification failed: ${JSON.stringify(response.data)}`;
+        addLog(errorMsg);
+        throw new Error(errorMsg);
+      }
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        const errorMessage = `Delivery API error: ${error.message}. ${
+          error.response ? `Response: ${JSON.stringify(error.response.data)}` : ''
+        }`;
+        addLog(errorMessage);
+        throw new Error(errorMessage);
+      }
+      const errorMessage = `Failed to notify delivery: ${error instanceof Error ? error.message : 'Unknown error'}`;
+      addLog(errorMessage);
+      throw new Error(errorMessage);
+    }
+  };
+
   const mintUSDC = async (
     client: WalletClient,
     destinationChainId: number,
-    attestation: any
+    attestation: any,
+    amount: string,
+    recipient: string
   ) => {
     const MAX_RETRIES = 3;
     let retries = 0;
@@ -395,6 +458,19 @@ export function useCrossChainTransfer() {
         });
 
         addLog(`Mint Tx: ${tx}`);
+
+        // Notify delivery after successful mint
+        const chainName = Object.entries(SupportedChainId).find(
+          ([_, value]) => value === destinationChainId
+        )?.[0] || '';
+        
+        await notifyDelivery(
+          chainName,
+          recipient,
+          parseFloat(amount),
+          tx
+        );
+
         setCurrentStep("completed");
         break;
       } catch (err) {
@@ -508,7 +584,9 @@ export function useCrossChainTransfer() {
       await mintUSDC(
         mintClient,
         destinationChainId,
-        attestation
+        attestation,
+        amount,
+        defaultDestination
       );
       
       setCurrentStep("completed");
