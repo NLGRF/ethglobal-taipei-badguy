@@ -94,7 +94,7 @@ export const getGasSellerAddress = (chain: Chain): string => {
     case Chain.BASE:
       return '0x0000000000000000000000000000000000000000';
     case Chain.CELO:
-      return '0x0000000000000000000000000000000000000000';
+      return '0xaC20EF932f62B66D9b402da26E70716695EF2a09';
     case Chain.LINEA:
       return '0x0000000000000000000000000000000000000000';
     case Chain.ROOTSTOCK:
