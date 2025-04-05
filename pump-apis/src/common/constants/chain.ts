@@ -97,4 +97,44 @@ export const getChainRPC = (chain: Chain): string => {
     default:
       return 'https://eth.llamarpc.com';
   }
+};
+
+export const getGasSellerAddress = (chain: Chain): string => {
+  switch (chain) {
+    // Mainnets
+    case Chain.ETHEREUM:
+      return '0x0000000000000000000000000000000000000000';
+    case Chain.POLYGON:
+      return '0x0000000000000000000000000000000000000000';
+    case Chain.BASE:
+      return '0x0000000000000000000000000000000000000000';
+    case Chain.CELO:
+      return '0x0000000000000000000000000000000000000000';
+    case Chain.LINEA:
+      return '0x0000000000000000000000000000000000000000';
+    case Chain.ROOTSTOCK:
+      return '0x0000000000000000000000000000000000000000';
+    case Chain.SAGA:
+      return '0x0000000000000000000000000000000000000000';
+    
+    // Testnets
+    case Chain.ETHEREUM_SEPOLIA:
+      return '0x9285c4Aa8409D2A7A6b29dE2e62e7c3bF9b2dcdE';
+    case Chain.ETHEREUM_HOLESKY:
+      return '0x0000000000000000000000000000000000000000';
+    case Chain.POLYGON_MUMBAI:
+      return '0x0000000000000000000000000000000000000000';
+    case Chain.BASE_SEPOLIA:
+      return '0x0000000000000000000000000000000000000000';
+    case Chain.CELO_ALFAJORES:
+      return '0x0000000000000000000000000000000000000000';
+    case Chain.LINEA_SEPOLIA:
+      return '0x0000000000000000000000000000000000000000';
+    case Chain.ROOTSTOCK_TESTNET:
+      return '0x0000000000000000000000000000000000000000';
+    case Chain.SAGA_TESTNET:
+      return '0x0000000000000000000000000000000000000000';
+    default:
+      return '0x0000000000000000000000000000000000000000';
+  }
 }; 
